@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>82b12ac249fbb223299e6a234b87b948.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Pages\82b12ac249fbb223299e6a234b87b948.png" />
+    <None Remove="Pages\CloudArrow.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="82b12ac249fbb223299e6a234b87b948.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ini-parser" Version="2.5.2" />
+    <PackageReference Include="ModernWpfUI" Version="0.9.6" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="SevenZip" Version="19.0.0" />
+    <PackageReference Include="WindowsAPICodePack.Shell.CommonFileDialogs" Version="1.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Pages\82b12ac249fbb223299e6a234b87b948.png" />
+    <Resource Include="Pages\CloudArrow.png" />
+  </ItemGroup>
+
+</Project>
