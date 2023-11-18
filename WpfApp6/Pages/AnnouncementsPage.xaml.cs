@@ -64,7 +64,6 @@ namespace WpfApp6.Pages
 
         private void AddAnnouncementToUI(string author, string avatarUrl, string message, DateTime dateTime)
         {
-
             // Assume dateTime is in UTC
             var utcTime = DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
 
@@ -96,7 +95,8 @@ namespace WpfApp6.Pages
             TextBlock messageTextBlock = new TextBlock
             {
                 Text = message,
-                Margin = new Thickness(10, 0, 0, 0)
+                Margin = new Thickness(10, 0, 0, 0),
+                TextWrapping = TextWrapping.Wrap // Set TextWrapping to Wrap
             };
 
             TextBlock dateTextBlock = new TextBlock
@@ -112,10 +112,11 @@ namespace WpfApp6.Pages
 
             AnnouncementsStackPanel.Children.Add(announcementPanel);
         }
-    }
 
-    // Define a class to represent an Announcement
-    public class Announcement
+
+
+        // Define a class to represent an Announcement
+        public class Announcement
     {
         public string Author { get; set; }
         public string Avatar { get; set; }
