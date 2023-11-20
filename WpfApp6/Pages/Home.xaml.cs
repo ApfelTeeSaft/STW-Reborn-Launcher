@@ -33,12 +33,12 @@ namespace WpfApp6.Pages
                     {
                         if (UpdateINI.ReadValue("Auth", "Email") == "NONE" || UpdateINI.ReadValue("Auth", "Password") == "NONE")
                         {
-                            MessageBox.Show("Please Add Your STW - Reborn Info In Settings");
+                            MessageBox.Show("Please Add Your Project - STW Info In Settings");
                             return;
                         }
 
                         WebClient OMG = new WebClient();
-                        OMG.DownloadFile("https://cdn.discordapp.com/attachments/1173026686359584808/1173059010568650802/STWCurl.dll?ex=65629356&is=65501e56&hm=3089fbfad67a76a163a5d207ff239628fb62917c66536782962f73901dd7025c&", Path.Combine(path69, "Engine\\Binaries\\ThirdParty\\NVIDIA\\NVaftermath\\Win64", "GFSDK_Aftermath_Lib.x64.dll")); //replace with your curl
+                        OMG.DownloadFile("https://cdn.discordapp.com/attachments/1173024806015348818/1176212795742765156/Cobalt.dll?ex=656e0c87&is=655b9787&hm=99ba61512b4a882cbb33cfc505b99a0c4bffd49759bb132febf0121ac4bdfab7&", Path.Combine(path69, "Engine\\Binaries\\ThirdParty\\NVIDIA\\NVaftermath\\Win64", "GFSDK_Aftermath_Lib.x64.dll")); //replace with your curl
 
                         PSBasics.Start(path69, "-epicapp=Fortnite -epicenv=Prod -epiclocale=en-us -epicportal -noeac -fromfl=be -fltoken=h1cdhchd10150221h130eB56 -skippatchcheck", UpdateINI.ReadValue("Auth", "Email"), UpdateINI.ReadValue("Auth", "Password"));
 
@@ -59,7 +59,7 @@ namespace WpfApp6.Pages
                     }
                     else
                     {
-                        MessageBox.Show("Error: Either the file does not exist or the version is incorrect!\nVersion Required: 5.41");
+                        MessageBox.Show("Error: Either the file does not exist or the version is incorrect!\nVersion Required: 2.1.0");
                     }
                 }
             }

@@ -21,7 +21,7 @@ namespace WpfApp6.Pages
         {
             try
             {
-                string apiUrl = "http://127.0.0.1:5000/api/announcements"; //replace with actual server url
+                string apiUrl = "http://147.185.221.17:25662/api/announcements"; //replace with actual server url
                 using (HttpClient client = new HttpClient())
                 {
                     string jsonResult = await client.GetStringAsync(apiUrl);
@@ -117,10 +117,11 @@ namespace WpfApp6.Pages
 
         // Define a class to represent an Announcement
         public class Announcement
-    {
-        public string Author { get; set; }
-        public string Avatar { get; set; }
-        public string Message { get; set; }
-        public DateTime DateTime { get; set; }
+        {
+            public string Author { get; set; }
+            public string Avatar { get; set; }
+            public string Message { get; set; }
+            public DateTime DateTime { get; set; }
+        }
     }
 }
