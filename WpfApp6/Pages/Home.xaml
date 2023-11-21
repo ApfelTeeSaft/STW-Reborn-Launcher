@@ -9,7 +9,7 @@
 
 
         <Image HorizontalAlignment="Left" Height="142" Margin="122,40,0,0" VerticalAlignment="Top" Width="146" Source="/Pages/82b12ac249fbb223299e6a234b87b948.png" RenderTransformOrigin="1.268,0.599"/>
-        <Button Content="Launch" Margin="0,284,0,0" VerticalAlignment="Top" Width="116" Height="45" HorizontalAlignment="Center" Click="Button_Click"/>
+        <Button Content="Launch" Margin="0,284,0,0" VerticalAlignment="Top" Width="116" Height="45" HorizontalAlignment="Center" Click="Launch_Click"/>
 
     </Grid>
 </UserControl>

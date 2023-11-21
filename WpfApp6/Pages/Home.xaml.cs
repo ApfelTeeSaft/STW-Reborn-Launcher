@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -19,7 +20,57 @@ namespace WpfApp6.Pages
             InitializeComponent();
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        public class DataUtility
+        {
+            private static readonly string FileName = "data.json";
+
+            public static void SaveData(string email, string password, string path)
+            {
+                var data = new DataModel { Email = email, Password = password, Path = path };
+                string jsonData = JsonConvert.SerializeObject(data);
+
+                string localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                string pstwFolderPath = Path.Combine(localAppDataPath, "PSTW");
+
+                Directory.CreateDirectory(pstwFolderPath);
+
+                string filePath = Path.Combine(pstwFolderPath, FileName);
+
+                File.WriteAllText(filePath, jsonData);
+            }
+
+            public static DataModel LoadData()
+            {
+                string localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                string pstwFolderPath = Path.Combine(localAppDataPath, "PSTW");
+                string filePath = Path.Combine(pstwFolderPath, FileName);
+
+                if (File.Exists(filePath))
+                {
+                    try
+                    {
+                        string jsonData = File.ReadAllText(filePath);
+                        return JsonConvert.DeserializeObject<DataModel>(jsonData);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Handle deserialization error
+                        Console.WriteLine($"Error deserializing data: {ex.Message}");
+                    }
+                }
+
+                return null;
+            }
+
+            public class DataModel
+            {
+                public string Email { get; set; }
+                public string Password { get; set; }
+                public string Path { get; set; }
+            }
+        }
+
+        private void Launch_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -59,7 +110,7 @@ namespace WpfApp6.Pages
                     }
                     else
                     {
-                        MessageBox.Show("Error: Either the file does not exist or the version is incorrect!\nVersion Required: 2.1.0");
+                        MessageBox.Show("Error: Either the file does not exist or the version is incorrect!\nVersion Required: 5.41");
                     }
                 }
             }

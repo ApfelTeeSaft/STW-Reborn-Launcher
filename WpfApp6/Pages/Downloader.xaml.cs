@@ -1,29 +1,33 @@
 ﻿using System;
 using System.IO;
-using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using WpfApp6.Services;
 using System.Windows.Forms;
 using System.IO.Compression;
+using System.Net;
 
 namespace WpfApp6.Pages
 {
-    /// <summary>
-    /// Interaction logic for Downloader.xaml
-    /// </summary>
     public partial class Downloader : System.Windows.Controls.UserControl
     {
         private CancellationTokenSource cancellationTokenSource;
         private FolderBrowserDialog folderBrowserDialog;
+        private DownloadStateService downloadStateService;
 
         public Downloader()
         {
             InitializeComponent();
+            // Retrieve DownloadStateService instance from App resources
+            downloadStateService = (DownloadStateService)App.Current.Resources["DownloadStateService"];
             cancellationTokenSource = new CancellationTokenSource();
             folderBrowserDialog = new FolderBrowserDialog();
+
+            // Subscribe to progress changes
+            downloadStateService.ProgressChanged += UpdateProgressBar;
         }
 
         private async void Button1_Click(object sender, RoutedEventArgs e)
@@ -37,16 +41,17 @@ namespace WpfApp6.Pages
                 {
                     string downloadPath = folderBrowserDialog.SelectedPath;
 
-                    // Enable cancel button
-                    CancelButton.Visibility = Visibility.Visible;
+                    // Set the flag indicating that download is in progress
+                    downloadStateService.IsDownloadInProgress = true;
 
                     try
                     {
                         // Reset progress bar
                         DownloadProgressBar.Value = 0;
+                        downloadStateService.ResetProgress();
 
                         // Download and extract a file from a website asynchronously
-                        await DownloadAndExtractAsync(downloadPath, "https://cdn.blksservers.com/2.1.0.zip");
+                        await DownloadAndExtractAsync(downloadPath, "https://cdn.blksservers.com/7.10.rar");
 
                         // For simplicity, I'll just show a message box
                         System.Windows.MessageBox.Show("File downloaded and extracted successfully!");
@@ -55,10 +60,10 @@ namespace WpfApp6.Pages
                     {
                         System.Windows.MessageBox.Show("Download canceled!");
 
-                        // Delete the partially downloaded file
+                        // Delete the partially downloaded file, removed cancel button since it was causing problems lol
                         if (Directory.Exists(downloadPath))
                         {
-                            string partialDownloadPath = Path.Combine(downloadPath, "downloaded_file.zip");
+                            string partialDownloadPath = Path.Combine(downloadPath, "fortnite.zip");
                             if (File.Exists(partialDownloadPath))
                             {
                                 File.Delete(partialDownloadPath);
@@ -71,8 +76,9 @@ namespace WpfApp6.Pages
                     }
                     finally
                     {
-                        // Disable cancel button
-                        CancelButton.Visibility = Visibility.Collapsed;
+
+                        // Reset the flag indicating that download is no longer in progress
+                        downloadStateService.IsDownloadInProgress = false;
                     }
                 }
             }
@@ -82,15 +88,49 @@ namespace WpfApp6.Pages
             }
         }
 
-        private async Task DownloadAndExtractAsync(string downloadPath, string fileUrl)
+        private async Task DownloadAndExtractAsync(string downloadPath, string fileUrl, int maxRetries = 3)
+        {
+            int retries = 0;
+
+            while (retries < maxRetries)
+            {
+                try
+                {
+                    await DownloadFile(downloadPath, fileUrl);
+                    break; // Success, exit the loop
+                }
+                catch (Exception ex)
+                {
+                    // Log or handle the exception as needed
+                    retries++;
+                    if (retries == maxRetries)
+                    {
+                        // Throw an exception or handle failure after max retries
+                        throw;
+                    }
+                }
+            }
+
+            // After successful download, extract and delete
+            await Task.Delay(15000);
+            ZipFile.ExtractToDirectory(Path.Combine(downloadPath, "fortnite.zip"), downloadPath);
+            await Task.Delay(15000);
+            File.Delete(Path.Combine(downloadPath, "fortnite.zip"));
+        }
+
+        private async Task DownloadFile(string downloadPath, string fileUrl)
         {
             using (HttpClient client = new HttpClient())
             {
+                client.Timeout = TimeSpan.FromMinutes(10); // Adjust the timeout as needed
+                client.DefaultRequestHeaders.ConnectionClose = true;
+
                 HttpResponseMessage response = await client.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead);
+
                 long fileSize = response.Content.Headers.ContentLength.GetValueOrDefault();
 
                 using (Stream contentStream = await response.Content.ReadAsStreamAsync(),
-                              fileStream = new FileStream(Path.Combine(downloadPath, "downloaded_file.zip"), FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+                              fileStream = new FileStream(Path.Combine(downloadPath, "fortnite.zip"), FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
                 {
                     byte[] buffer = new byte[8192];
                     int bytesRead;
@@ -103,15 +143,9 @@ namespace WpfApp6.Pages
                         // Update progress bar on UI thread.
                         totalBytesRead += bytesRead;
                         int progressPercentage = (int)((double)totalBytesRead / fileSize * 100);
-                        UpdateProgressBar(progressPercentage);
+                        downloadStateService.DownloadProgress = progressPercentage;
                     }
                 }
-
-                // Extract the downloaded file using System.IO.Compression
-                ZipFile.ExtractToDirectory(Path.Combine(downloadPath, "downloaded_file.zip"), downloadPath);
-
-                // Optionally, you can delete the downloaded zip file after extraction
-                File.Delete(Path.Combine(downloadPath, "downloaded_file.zip"));
             }
         }
 
@@ -128,6 +162,14 @@ namespace WpfApp6.Pages
 
             // Reset progress bar
             DownloadProgressBar.Value = 0;
+            downloadStateService.ResetProgress();
+
+            // Reset the flag indicating that download is no longer in progress
+            downloadStateService.IsDownloadInProgress = false;
+
+            // Set the visibility state of the CancelButton in the service to false
+            downloadStateService.IsCancelButtonVisible = false;
         }
+
     }
 }

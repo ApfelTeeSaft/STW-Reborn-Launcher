@@ -10,6 +10,7 @@ using WpfApp6.Pages;
 using ModernWpf.Media.Animation;
 using System.Net.NetworkInformation;
 using System.IO;
+using WpfApp6.Services;
 
 namespace WpfApp6
 {
@@ -17,19 +18,18 @@ namespace WpfApp6
     {
         Home home = new Home();
         Settings settings = new Settings();
-        Downloader download = new Downloader();
+        Downloader download;
         Loading loading = new Loading();
         AnnouncementsPage announcementsPage = new AnnouncementsPage(); // Add AnnouncementsPage instance
+        DownloadStateService downloadStateService = new DownloadStateService(); // Create a singleton instance of DownloadStateService
 
         public MainWindow()
         {
             InitializeComponent();
 
-            if (!CheckInternetConnection())
-            {
-                MessageBox.Show("You need to be connected to the internet.");
-                Close();
-            }
+            // Create a singleton instance of DownloadStateService and add it to App resources
+            downloadStateService = new DownloadStateService();
+            App.Current.Resources["DownloadStateService"] = downloadStateService;
 
             ContentFrame.Navigate(loading);
 
@@ -76,7 +76,9 @@ namespace WpfApp6
                         }
                         else if (item.Tag.ToString() == "Downloader")
                         {
-                            ContentFrame.Navigate(new Downloader());
+                            // Provide the existing singleton instance of DownloadStateService
+                            download = new Downloader();
+                            ContentFrame.Navigate(download);
                         }
                         else if (item.Tag.ToString() == "Announcements")
                         {
