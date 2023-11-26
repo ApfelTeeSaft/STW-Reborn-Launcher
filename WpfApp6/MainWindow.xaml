@@ -7,7 +7,7 @@
     xmlns:ui="http://schemas.modernwpf.com/2019"
     xmlns:telerik="http://schemas.telerik.com/2008/xaml/presentation" x:Class="WpfApp6.MainWindow"
     mc:Ignorable="d"
-    Title="STW - Reborn" Height="613" Width="908"
+    Title="Launcher" Height="613" Width="908"
     ui:WindowHelper.UseModernWindowStyle="True" ResizeMode="NoResize">
     <Grid>
         <Grid.ColumnDefinitions>

@@ -94,12 +94,12 @@ namespace WpfApp6
             try
             {
                 // Check server status
-                await CheckUrlEndpoint("http://147.185.221.17:25662/api/access_status"); //replace with your actual server ip
+                await CheckUrlEndpoint("http://127.0.0.1:5000/api/access_status"); //replace with your actual server ip
 
                 // Check version
                 using (HttpClient client = new HttpClient())
                 {
-                    HttpResponseMessage response = await client.GetAsync("http://147.185.221.17:25662/api/version"); //replace with your actual server ip
+                    HttpResponseMessage response = await client.GetAsync("http://127.0.0.1:5000/api/version"); //replace with your actual server ip
 
                     if (response.IsSuccessStatusCode)
                     {

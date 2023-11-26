@@ -17,11 +17,11 @@ namespace WpfApp6.Pages
             LoadDataFromApi();
         }
 
-        private async void LoadDataFromApi()
+        public async void LoadDataFromApi()
         {
             try
             {
-                string apiUrl = "http://147.185.221.17:25662/api/announcements"; //replace with actual server url
+                string apiUrl = "http://31.220.96.133:5000/api/announcements"; //replace with actual server url
                 using (HttpClient client = new HttpClient())
                 {
                     string jsonResult = await client.GetStringAsync(apiUrl);
@@ -122,6 +122,11 @@ namespace WpfApp6.Pages
             public string Avatar { get; set; }
             public string Message { get; set; }
             public DateTime DateTime { get; set; }
+        }
+
+        private void AnnouncementsStackPanel_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
+        {
+
         }
     }
 }

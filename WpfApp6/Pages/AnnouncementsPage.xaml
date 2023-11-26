@@ -7,8 +7,10 @@
       Background="Transparent">
 
     <Grid>
-        <StackPanel x:Name="AnnouncementsStackPanel" Margin="10">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+            <StackPanel x:Name="AnnouncementsStackPanel" Margin="10">
             <!-- Announcements will be added here dynamically -->
-        </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Page>

@@ -84,10 +84,11 @@ namespace WpfApp6.Pages
             };
             string jsonData = JsonConvert.SerializeObject(data);
             string localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            string pstwFolderPath = System.IO.Path.Combine(localAppDataPath, "PSTW");
-            Directory.CreateDirectory(pstwFolderPath);
-            string filePath = System.IO.Path.Combine(pstwFolderPath, "data.json");
+            string LauncherFolderPath = System.IO.Path.Combine(localAppDataPath, "Launcher");
+            Directory.CreateDirectory(LauncherFolderPath);
+            string filePath = System.IO.Path.Combine(LauncherFolderPath, "data.json");
             File.WriteAllText(filePath, jsonData);
+            MessageBox.Show("Save Successful, you don't have to enter your login creds again!");
         }
 
         private void PathBox_TextChanged(object sender, TextChangedEventArgs e)

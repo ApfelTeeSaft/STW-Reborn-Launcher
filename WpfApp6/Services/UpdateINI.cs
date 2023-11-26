@@ -15,7 +15,7 @@ namespace WpfApp6.Services
 		public static void WriteToConfig(string SectionName, string PathKey, string NewValue)
 		{
 			string BaseFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-			string DataFolder = Path.Combine(BaseFolder, "PSTW");
+			string DataFolder = Path.Combine(BaseFolder, "Launcher");
 			Directory.CreateDirectory(DataFolder);
 			string FilePath = Path.Combine(DataFolder, "Settings.ini");
 
@@ -42,7 +42,7 @@ namespace WpfApp6.Services
 		public static string ReadValue(string SectionName, string PathKey) // NO T writing !
 		{
 			string BaseFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-			string DataFolder = Path.Combine(BaseFolder, "PSTW");
+			string DataFolder = Path.Combine(BaseFolder, "Launcher");
 			string FilePath = Path.Combine(DataFolder, "Settings.ini");
 
 			FileIniDataParser parser = new FileIniDataParser();

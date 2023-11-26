@@ -9,6 +9,9 @@ using WpfApp6.Services;
 using System.Windows.Forms;
 using System.IO.Compression;
 using System.Net;
+using SharpCompress.Archives;
+using SharpZipArchive = SharpCompress.Archives.Zip.ZipArchive;
+using SharpCompress.Common;
 
 namespace WpfApp6.Pages
 {
@@ -51,7 +54,7 @@ namespace WpfApp6.Pages
                         downloadStateService.ResetProgress();
 
                         // Download and extract a file from a website asynchronously
-                        await DownloadAndExtractAsync(downloadPath, "https://cdn.blksservers.com/7.10.rar");
+                        await DownloadAndExtractAsync(downloadPath, "https://cdn.blksservers.com/7.30.zip");
 
                         // For simplicity, I'll just show a message box
                         System.Windows.MessageBox.Show("File downloaded and extracted successfully!");
@@ -63,7 +66,7 @@ namespace WpfApp6.Pages
                         // Delete the partially downloaded file, removed cancel button since it was causing problems lol
                         if (Directory.Exists(downloadPath))
                         {
-                            string partialDownloadPath = Path.Combine(downloadPath, "fortnite.zip");
+                            string partialDownloadPath = Path.Combine(downloadPath, "fortnite.rar");
                             if (File.Exists(partialDownloadPath))
                             {
                                 File.Delete(partialDownloadPath);
@@ -111,11 +114,34 @@ namespace WpfApp6.Pages
                 }
             }
 
-            // After successful download, extract and delete
-            await Task.Delay(15000);
-            ZipFile.ExtractToDirectory(Path.Combine(downloadPath, "fortnite.zip"), downloadPath);
-            await Task.Delay(15000);
-            File.Delete(Path.Combine(downloadPath, "fortnite.zip"));
+            // After successful download, introduce a delay before extraction and deletion
+            await Task.Delay(1000); // Add a delay of 1 second (adjust as needed)
+
+            try
+            {
+                using (var archive = SharpZipArchive.Open(Path.Combine(downloadPath, "fortnite.rar")))
+                {
+                    foreach (var entry in archive.Entries)
+                    {
+                        if (!entry.IsDirectory)
+                        {
+                            entry.WriteToDirectory(downloadPath, new ExtractionOptions()
+                            {
+                                ExtractFullPath = true,
+                                Overwrite = true
+                            });
+                        }
+                    }
+                }
+
+                // Optionally, you can delete the downloaded zip file after extraction
+                File.Delete(Path.Combine(downloadPath, "fortnite.rar"));
+            }
+            catch (Exception ex)
+            {
+                // Log or handle the exception during extraction and deletion
+                throw;
+            }
         }
 
         private async Task DownloadFile(string downloadPath, string fileUrl)
@@ -130,7 +156,7 @@ namespace WpfApp6.Pages
                 long fileSize = response.Content.Headers.ContentLength.GetValueOrDefault();
 
                 using (Stream contentStream = await response.Content.ReadAsStreamAsync(),
-                              fileStream = new FileStream(Path.Combine(downloadPath, "fortnite.zip"), FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+                              fileStream = new FileStream(Path.Combine(downloadPath, "fortnite.rar"), FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
                 {
                     byte[] buffer = new byte[8192];
                     int bytesRead;
