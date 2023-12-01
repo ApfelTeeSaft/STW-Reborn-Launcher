@@ -4,14 +4,14 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using WpfApp6.Services;
 using System.Windows.Forms;
-using System.IO.Compression;
-using System.Net;
 using SharpCompress.Archives;
 using SharpZipArchive = SharpCompress.Archives.Zip.ZipArchive;
+using Newtonsoft.Json.Linq;
 using SharpCompress.Common;
+using Newtonsoft.Json;
+using System.Linq;
 
 namespace WpfApp6.Pages
 {
@@ -43,6 +43,7 @@ namespace WpfApp6.Pages
                 if (result == DialogResult.OK)
                 {
                     string downloadPath = folderBrowserDialog.SelectedPath;
+                    string apiUrl = "http://127.0.0.1:5000/api/download"; // Replace with your API endpoint
 
                     // Set the flag indicating that download is in progress
                     downloadStateService.IsDownloadInProgress = true;
@@ -53,8 +54,14 @@ namespace WpfApp6.Pages
                         DownloadProgressBar.Value = 0;
                         downloadStateService.ResetProgress();
 
-                        // Download and extract a file from a website asynchronously
-                        await DownloadAndExtractAsync(downloadPath, "https://cdn.blksservers.com/7.30.zip");
+                        // Fetch JSON data from the API endpoint
+                        string jsonContent = await DownloadJsonContentAsync(apiUrl);
+
+                        // Parse JSON to get the download URL
+                        string downloadUrl = ParseDownloadUrl(jsonContent);
+
+                        // Download and extract a file from the obtained URL asynchronously
+                        await DownloadAndExtractAsync(downloadPath, downloadUrl);
 
                         // For simplicity, I'll just show a message box
                         System.Windows.MessageBox.Show("File downloaded and extracted successfully!");
@@ -66,7 +73,7 @@ namespace WpfApp6.Pages
                         // Delete the partially downloaded file, removed cancel button since it was causing problems lol
                         if (Directory.Exists(downloadPath))
                         {
-                            string partialDownloadPath = Path.Combine(downloadPath, "fortnite.rar");
+                            string partialDownloadPath = Path.Combine(downloadPath, "fortnite.zip");
                             if (File.Exists(partialDownloadPath))
                             {
                                 File.Delete(partialDownloadPath);
@@ -79,7 +86,6 @@ namespace WpfApp6.Pages
                     }
                     finally
                     {
-
                         // Reset the flag indicating that download is no longer in progress
                         downloadStateService.IsDownloadInProgress = false;
                     }
@@ -90,6 +96,47 @@ namespace WpfApp6.Pages
                 System.Windows.MessageBox.Show($"Error: {ex.Message}");
             }
         }
+
+        private async Task<string> DownloadJsonContentAsync(string apiUrl)
+        {
+            // Check if apiUrl is a valid absolute URI
+            if (!Uri.TryCreate(apiUrl, UriKind.Absolute, out var uri))
+            {
+                Console.WriteLine($"Invalid API URL: {apiUrl}");
+                return null;
+            }
+
+            using (HttpClient client = new HttpClient())
+            {
+                client.Timeout = TimeSpan.FromMinutes(10); // Adjust the timeout as needed
+
+                // Use the absolute URI for the API endpoint
+                HttpResponseMessage response = await client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead);
+
+                // Log the response content
+                string responseContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine("Response Content: " + responseContent);
+
+                return responseContent;
+            }
+        }
+
+
+        private string ParseDownloadUrl(string jsonContent)
+        {
+            try
+            {
+                dynamic jsonObject = Newtonsoft.Json.JsonConvert.DeserializeObject(jsonContent);
+                var downloadUrl = jsonObject.downloadurl[0].downloadurl.ToString();
+                return downloadUrl;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error parsing download URL: {ex.Message}");
+                return null; // Handle the error gracefully or throw an exception as needed
+            }
+        }
+
 
         private async Task DownloadAndExtractAsync(string downloadPath, string fileUrl, int maxRetries = 3)
         {
@@ -119,7 +166,7 @@ namespace WpfApp6.Pages
 
             try
             {
-                using (var archive = SharpZipArchive.Open(Path.Combine(downloadPath, "fortnite.rar")))
+                using (var archive = SharpZipArchive.Open(Path.Combine(downloadPath, "fortnite.zip")))
                 {
                     foreach (var entry in archive.Entries)
                     {
@@ -135,7 +182,7 @@ namespace WpfApp6.Pages
                 }
 
                 // Optionally, you can delete the downloaded zip file after extraction
-                File.Delete(Path.Combine(downloadPath, "fortnite.rar"));
+                File.Delete(Path.Combine(downloadPath, "fortnite.zip"));
             }
             catch (Exception ex)
             {
@@ -156,7 +203,7 @@ namespace WpfApp6.Pages
                 long fileSize = response.Content.Headers.ContentLength.GetValueOrDefault();
 
                 using (Stream contentStream = await response.Content.ReadAsStreamAsync(),
-                              fileStream = new FileStream(Path.Combine(downloadPath, "fortnite.rar"), FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+                              fileStream = new FileStream(Path.Combine(downloadPath, "fortnite.zip"), FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
                 {
                     byte[] buffer = new byte[8192];
                     int bytesRead;
