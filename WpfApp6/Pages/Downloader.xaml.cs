@@ -6,12 +6,10 @@ using System.Threading.Tasks;
 using System.Windows;
 using WpfApp6.Services;
 using System.Windows.Forms;
-using SharpCompress.Archives;
-using SharpZipArchive = SharpCompress.Archives.Zip.ZipArchive;
+using SharpCompress.Archives; // Add this using directive for ZipArchive
+using SharpCompress.Archives.Rar; // Add this using directive for RarArchive
 using Newtonsoft.Json.Linq;
-using SharpCompress.Common;
-using Newtonsoft.Json;
-using System.Linq;
+using System.IO.Abstractions;
 
 namespace WpfApp6.Pages
 {
@@ -60,8 +58,11 @@ namespace WpfApp6.Pages
                         // Parse JSON to get the download URL
                         string downloadUrl = ParseDownloadUrl(jsonContent);
 
+                        // Extract the file name from the URL
+                        string fileName = Path.GetFileName(new Uri(downloadUrl).LocalPath);
+
                         // Download and extract a file from the obtained URL asynchronously
-                        await DownloadAndExtractAsync(downloadPath, downloadUrl);
+                        await DownloadAndExtractAsync(downloadPath, downloadUrl, fileName);
 
                         // For simplicity, I'll just show a message box
                         System.Windows.MessageBox.Show("File downloaded and extracted successfully!");
@@ -73,7 +74,7 @@ namespace WpfApp6.Pages
                         // Delete the partially downloaded file, removed cancel button since it was causing problems lol
                         if (Directory.Exists(downloadPath))
                         {
-                            string partialDownloadPath = Path.Combine(downloadPath, "fortnite.zip");
+                            string partialDownloadPath = Path.Combine(downloadPath, "fortnite.rar");
                             if (File.Exists(partialDownloadPath))
                             {
                                 File.Delete(partialDownloadPath);
@@ -121,7 +122,6 @@ namespace WpfApp6.Pages
             }
         }
 
-
         private string ParseDownloadUrl(string jsonContent)
         {
             try
@@ -137,8 +137,7 @@ namespace WpfApp6.Pages
             }
         }
 
-
-        private async Task DownloadAndExtractAsync(string downloadPath, string fileUrl, int maxRetries = 3)
+        private async Task DownloadAndExtractAsync(string downloadPath, string fileUrl, string fileName, int maxRetries = 3)
         {
             int retries = 0;
 
@@ -146,7 +145,40 @@ namespace WpfApp6.Pages
             {
                 try
                 {
+                    string downloadedFilePath = Path.Combine(downloadPath, fileName);
+
                     await DownloadFile(downloadPath, fileUrl);
+
+                    // After successful download, introduce a delay before extraction and deletion
+                    await Task.Delay(1000); // Add a delay of 1 second (adjust as needed)
+
+                    try
+                    {
+                        // Determine the file format based on the extension
+                        string extension = Path.GetExtension(downloadedFilePath)?.ToLowerInvariant();
+
+                        using (IArchive archive = GetArchive(downloadedFilePath, extension))
+                        {
+                            if (archive != null)
+                            {
+                                ExtractEntries(archive, downloadPath);
+                            }
+                            else
+                            {
+                                // Handle unsupported file format or throw an exception
+                                throw new NotSupportedException($"Unsupported file format: {extension}");
+                            }
+                        }
+
+                        // Optionally, you can delete the downloaded file after extraction
+                        File.Delete(downloadedFilePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log or handle the exception during extraction and deletion
+                        throw;
+                    }
+
                     break; // Success, exit the loop
                 }
                 catch (Exception ex)
@@ -160,36 +192,76 @@ namespace WpfApp6.Pages
                     }
                 }
             }
+        }
 
-            // After successful download, introduce a delay before extraction and deletion
-            await Task.Delay(1000); // Add a delay of 1 second (adjust as needed)
 
-            try
+
+        private void ExtractEntriesFromZip(IArchive archive, string extractPath)
+        {
+            foreach (var entry in archive.Entries)
             {
-                using (var archive = SharpZipArchive.Open(Path.Combine(downloadPath, "fortnite.zip")))
+                if (!entry.IsDirectory)
                 {
-                    foreach (var entry in archive.Entries)
+                    using (var entryStream = entry.OpenEntryStream())
                     {
-                        if (!entry.IsDirectory)
+                        var entryFilePath = Path.Combine(extractPath, entry.Key);
+                        var entryDirectory = Path.GetDirectoryName(entryFilePath);
+
+                        // Create directory if it doesn't exist
+                        if (!Directory.Exists(entryDirectory))
                         {
-                            entry.WriteToDirectory(downloadPath, new ExtractionOptions()
-                            {
-                                ExtractFullPath = true,
-                                Overwrite = true
-                            });
+                            Directory.CreateDirectory(entryDirectory);
+                        }
+
+                        using (var fileStream = new FileStream(entryFilePath, FileMode.Create))
+                        {
+                            entryStream.CopyTo(fileStream);
                         }
                     }
                 }
-
-                // Optionally, you can delete the downloaded zip file after extraction
-                File.Delete(Path.Combine(downloadPath, "fortnite.zip"));
-            }
-            catch (Exception ex)
-            {
-                // Log or handle the exception during extraction and deletion
-                throw;
             }
         }
+
+        private void ExtractEntriesFromRar(IArchive archive, string extractPath)
+        {
+            foreach (var entry in archive.Entries)
+            {
+                if (!entry.IsDirectory)
+                {
+                    using (var entryStream = entry.OpenEntryStream())
+                    {
+                        var entryFilePath = Path.Combine(extractPath, entry.Key);
+                        var entryDirectory = Path.GetDirectoryName(entryFilePath);
+
+                        // Create directory if it doesn't exist
+                        if (!Directory.Exists(entryDirectory))
+                        {
+                            Directory.CreateDirectory(entryDirectory);
+                        }
+
+                        using (var fileStream = new FileStream(entryFilePath, FileMode.Create))
+                        {
+                            entryStream.CopyTo(fileStream);
+                        }
+                    }
+                }
+            }
+        }
+
+        private IArchive GetArchive(string filePath, string extension)
+        {
+            switch (extension)
+            {
+                case ".zip":
+                    return SharpCompress.Archives.Zip.ZipArchive.Open(filePath);
+                case ".rar":
+                    return SharpCompress.Archives.Rar.RarArchive.Open(filePath);
+                // Add more cases for other supported formats if needed
+                default:
+                    return null; // Unsupported format
+            }
+        }
+
 
         private async Task DownloadFile(string downloadPath, string fileUrl)
         {
@@ -200,10 +272,14 @@ namespace WpfApp6.Pages
 
                 HttpResponseMessage response = await client.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead);
 
+                // Extract the file name from the URL
+                string fileName = Path.GetFileName(new Uri(fileUrl).LocalPath);
+                string downloadedFilePath = Path.Combine(downloadPath, fileName);
+
                 long fileSize = response.Content.Headers.ContentLength.GetValueOrDefault();
 
                 using (Stream contentStream = await response.Content.ReadAsStreamAsync(),
-                              fileStream = new FileStream(Path.Combine(downloadPath, "fortnite.zip"), FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+                              fileStream = new FileStream(downloadedFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
                 {
                     byte[] buffer = new byte[8192];
                     int bytesRead;
@@ -217,6 +293,32 @@ namespace WpfApp6.Pages
                         totalBytesRead += bytesRead;
                         int progressPercentage = (int)((double)totalBytesRead / fileSize * 100);
                         downloadStateService.DownloadProgress = progressPercentage;
+                    }
+                }
+            }
+        }
+
+        private void ExtractEntries(IArchive archive, string extractPath)
+        {
+            foreach (var entry in archive.Entries)
+            {
+                if (!entry.IsDirectory)
+                {
+                    using (var entryStream = entry.OpenEntryStream())
+                    {
+                        var entryFilePath = Path.Combine(extractPath, entry.Key);
+                        var entryDirectory = Path.GetDirectoryName(entryFilePath);
+
+                        // Create directory if it doesn't exist
+                        if (!Directory.Exists(entryDirectory))
+                        {
+                            Directory.CreateDirectory(entryDirectory);
+                        }
+
+                        using (var fileStream = new FileStream(entryFilePath, FileMode.Create))
+                        {
+                            entryStream.CopyTo(fileStream);
+                        }
                     }
                 }
             }
@@ -243,6 +345,5 @@ namespace WpfApp6.Pages
             // Set the visibility state of the CancelButton in the service to false
             downloadStateService.IsCancelButtonVisible = false;
         }
-
     }
 }
