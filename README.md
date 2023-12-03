@@ -1,3 +1,13 @@
+# A Universal Launcher for OG Fortnite Projects
+## based on the [EonV1 Launcher](https://github.com/eonfn/Launcher-V1)
+### heavily modified to contain the following things:
+- discord auth (soon)
+- download section
+- announcement section
+- locking / unlocking the launcher
+- variable backend version checking (soon)
+- anti tamper checks aka anti cheat (soon)
+
 # How to use?
 - replace server url in "MainWindow.xaml.cs" and "AnnouncementsPage.xaml.cs" and "Downloader.xaml.cs"
 - also replace both the curl and custom paks in "Home.xaml.cs"
